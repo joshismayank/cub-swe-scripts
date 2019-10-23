@@ -4,9 +4,13 @@ import sys
 import pandas as pd
 import os
 import re
+import smtplib
 import argparse
+import getpass
 from git import Repo
 from IPython import embed
+from pandas import ExcelWriter
+from pandas import ExcelFile
 
 assignments = {}
 
@@ -68,15 +72,57 @@ def download_assignment(assignment_no,filename,path_to_ssh):
             print(user)    
 
 
+def email_comments(email_id,assignment_no):
+    print "enter password"
+    password = getpass.getpass()
+    sheet = "assignment"+str(assignment_no)
+    s = smtplib.SMTP('smtp.gmail.com', 587)
+    s.starttls()
+    try:
+        s.login(email_id,password)
+    except:
+        print("could not authenticate gmail. Exiting")
+        sys.exit()
+    #open excel sheet => check for errors
+    try:
+        df = pd.read_excel("swe-grades.xlsx", sheetname = sheet)
+    except:
+        print("failed to access sheet {} of swe-grades.xlsx".format(sheet))
+    if 'comments' not in df.columns:
+        print("could not find 'comments' column")
+        sys.exit()
+    if 'SIS Login ID' not in df.columns:
+        print("could not find 'SIS Login ID' (canvas login id) column")
+        sys.exit()
+    for index, row in df.iterrows():
+        to_mail = row['SIS Login ID']
+        comment = row["comments"]
+        if comment is not None and to_mail is not None:
+            to_mail = to_mail+"@colorado.edu"
+            subject = 'CSCI7000-SWE: comments for '+sheet
+            email_text = """\
+                From: %s
+                To: %s
+                Subject: %s
+
+                %s
+                """ % (email_id, to_mail, subject, comment)
+            print(email_text)
+            #s.sendmail("sender_email_id", "receiver_email_id", email_text)
+    s.quit()
+
+
 parser = argparse.ArgumentParser("swe-assignment")
 parser.add_argument("--add", action = "store_true", help="add name of new assignment with: --assignment_no and --assignment_name")
 parser.add_argument("--download_repos", action = "store_true", help="give assignment_no with: --for_assignment")
+parser.add_argument("--email_comment", action = "store_true", help="send comments through email provide email-id with --email_id")
 parser.add_argument("--assignment_no", help="integer")
 parser.add_argument("--assignment_name", help="string: complete name as displayed in title of github classroom assignment")
 parser.add_argument("--destination_direc", help="string: full path of folder where repos need to be downloaded (default: repos will be downloaded to current directory)")
 parser.add_argument("--for_assignment", help="integer: to download repos for this assignment_no")
 parser.add_argument("--path_to_ssh", help="string: your ssh file which has been registered with github for ssh conections")
 parser.add_argument("--github_roster", help="string: name of csv file containing github id's for which assignment is to be downloaded (with column header as github_username)")
+parser.add_argument("--email_id", help="string: email-id to send comments about assignment")
 args = parser.parse_args()
 if args.add:
     try:
@@ -110,3 +156,11 @@ if args.download_repos:
         print("could not find path to ssh file")
         sys.exit()
     download_assignment(args.for_assignment,args.github_roster,args.path_to_ssh,args.destination_direc)
+if args.email_comment:
+    if type(args.email_id) is not str or args.email_id is None:
+        print("no email-id provided")
+        sys.exit()
+    if args.for_assignment is None:
+        print("for_assignment should can not be none")
+        sys.exit()
+    email_comments(args.email_id,args.for_assignment)
