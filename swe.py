@@ -76,16 +76,15 @@ def email_comments(email_id,assignment_no):
     print "enter password"
     password = getpass.getpass()
     sheet = "assignment"+str(assignment_no)
-    s = smtplib.SMTP('smtp.gmail.com', 587)
-    s.starttls()
+    s = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+    #s.starttls()
     try:
         s.login(email_id,password)
-    except:
-        print("could not authenticate gmail. Exiting")
+    except Exception as e:
+        print("could not authenticate gmail. Exiting"+str(e))
         sys.exit()
-    #open excel sheet => check for errors
     try:
-        df = pd.read_excel("swe-grades.xlsx", sheetname = sheet)
+        df = pd.read_excel("swe-grades.xlsx", sheet_name = sheet)
     except:
         print("failed to access sheet {} of swe-grades.xlsx".format(sheet))
     if 'comments' not in df.columns:
@@ -97,7 +96,7 @@ def email_comments(email_id,assignment_no):
     for index, row in df.iterrows():
         to_mail = row['SIS Login ID']
         comment = row["comments"]
-        if comment is not None and to_mail is not None:
+        if comment is not None and not isinstance(comment,float) and to_mail is not None and not isinstance(to_mail, float):
             to_mail = to_mail+"@colorado.edu"
             subject = 'CSCI7000-SWE: comments for '+sheet
             email_text = """\
@@ -107,7 +106,6 @@ def email_comments(email_id,assignment_no):
 
                 %s
                 """ % (email_id, to_mail, subject, comment)
-            print(email_text)
             #s.sendmail("sender_email_id", "receiver_email_id", email_text)
     s.quit()
 
@@ -115,7 +113,7 @@ def email_comments(email_id,assignment_no):
 parser = argparse.ArgumentParser("swe-assignment")
 parser.add_argument("--add", action = "store_true", help="add name of new assignment with: --assignment_no and --assignment_name")
 parser.add_argument("--download_repos", action = "store_true", help="give assignment_no with: --for_assignment")
-parser.add_argument("--email_comment", action = "store_true", help="send comments through email provide email-id with --email_id")
+parser.add_argument("--email_comments", action = "store_true", help="send comments through email provide email-id with --email_id")
 parser.add_argument("--assignment_no", help="integer")
 parser.add_argument("--assignment_name", help="string: complete name as displayed in title of github classroom assignment")
 parser.add_argument("--destination_direc", help="string: full path of folder where repos need to be downloaded (default: repos will be downloaded to current directory)")
@@ -156,7 +154,7 @@ if args.download_repos:
         print("could not find path to ssh file")
         sys.exit()
     download_assignment(args.for_assignment,args.github_roster,args.path_to_ssh,args.destination_direc)
-if args.email_comment:
+if args.email_comments:
     if type(args.email_id) is not str or args.email_id is None:
         print("no email-id provided")
         sys.exit()
