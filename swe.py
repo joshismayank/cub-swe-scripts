@@ -23,7 +23,7 @@ def add_assignment(assignment_no, assignment_name):
     assignments[assignment_no] = assignment_name
 
 
-def download_assignment(assignment_no,filename,path_to_ssh):
+def download_assignment(assignment_no,filename,path_to_ssh,destination_direc):
     """
     downloads repo's of all students for assignement specified by assignment number
     """
@@ -37,6 +37,9 @@ def download_assignment(assignment_no,filename,path_to_ssh):
     git_url_prefix = 'git@github.com:cu-swe4s-fall-2019/'
     git_url_postfix = '.git'
    
+    if destination_direc is None or isinstance(destination_direc, float):
+        destination_direc = "assignment"+str(assignment_no)+"/"
+
     unsuccessful_git_clone = []
 
     try:
@@ -54,7 +57,7 @@ def download_assignment(assignment_no,filename,path_to_ssh):
             curr_env = {}
             curr_env["GIT_SSH_COMMAND"] = "ssh -i "+path_to_ssh
             try:
-                Repo.clone_from(git_url,"assignment5/"+repo_dir,env=curr_env)
+                Repo.clone_from(git_url,destination_direc+repo_dir,env=curr_env)
             except:
                 unsuccessful_git_clone.append(user)
     except IOError:
@@ -112,7 +115,7 @@ def email_comments(email_id,assignment_no):
 
 parser = argparse.ArgumentParser("swe-assignment")
 parser.add_argument("--add", action = "store_true", help="add name of new assignment with: --assignment_no and --assignment_name")
-parser.add_argument("--download_repos", action = "store_true", help="give assignment_no with: --for_assignment")
+parser.add_argument("--download_repos", action = "store_true", help="give assignment_no with: --for_assignment and location of ssh file with --path_to_ssh")
 parser.add_argument("--email_comments", action = "store_true", help="send comments through email provide email-id with --email_id")
 parser.add_argument("--assignment_no", help="integer")
 parser.add_argument("--assignment_name", help="string: complete name as displayed in title of github classroom assignment")
