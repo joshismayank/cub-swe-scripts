@@ -30,7 +30,7 @@ Add assignment:
 		* --assingment_name "Example assignment"
 	- the assignment added this way will not be accessible next time the script is used. So, always add the assignment while downloading the assignment
 
-Email grades:
+Email comments:
 	- this requires you to turn on less secure access for your google account. it can be done as per this documentation: 'https://support.google.com/accounts/answer/6010255?hl=en/'
 	- get the comments in swe-grades.xlsx file
 	- the grades and comments for assignment 'n' sholud be stored in the 'assignment' sheet of the xlsx file. Like comments od asssignment 2 should be in 'assignment2' sheet
@@ -43,3 +43,9 @@ Email grades:
 		* --email_id "your@email.id"
 		* --for_assignment "1"
 	- the script will ask for password to authenticate the email address
+
+Extract grades:
+	- this creates an .xlsx file which can be uploaded directly to canvas
+	- download swe-grades.xlsx from the drive
+	- supply: --for_assignment (the assignment number) and --assignment_name (name of assignment in canvas)
+	- import the formed xlsx into canvas

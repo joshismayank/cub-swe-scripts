@@ -11,6 +11,8 @@ from git import Repo
 from IPython import embed
 from pandas import ExcelWriter
 from pandas import ExcelFile
+from pandas import ExcelWriter
+from email.mime.text import MIMEText
 
 assignments = {}
 
@@ -80,11 +82,10 @@ def email_comments(email_id,assignment_no):
     password = getpass.getpass()
     sheet = "assignment"+str(assignment_no)
     s = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-    #s.starttls()
     try:
-        s.login(email_id,password)
+        s.login(email_id,password)    
     except Exception as e:
-        print("could not authenticate gmail. Exiting"+str(e))
+        print("could not authenticate gmail. Exiting "+str(e))
         sys.exit()
     try:
         df = pd.read_excel("swe-grades.xlsx", sheet_name = sheet)
@@ -96,27 +97,55 @@ def email_comments(email_id,assignment_no):
     if 'SIS Login ID' not in df.columns:
         print("could not find 'SIS Login ID' (canvas login id) column")
         sys.exit()
+    subject = 'CSCI7000-SWE: comments for '+sheet
     for index, row in df.iterrows():
         to_mail = row['SIS Login ID']
         comment = row["comments"]
         if comment is not None and not isinstance(comment,float) and to_mail is not None and not isinstance(to_mail, float):
             to_mail = to_mail+"@colorado.edu"
-            subject = 'CSCI7000-SWE: comments for '+sheet
-            email_text = """\
-                From: %s
-                To: %s
-                Subject: %s
-
-                %s
-                """ % (email_id, to_mail, subject, comment)
-            #s.sendmail("sender_email_id", "receiver_email_id", email_text)
+            msg = MIMEText(comment)
+            msg['Subject'] = subject
+            msg['From'] = email_id
+            msg['To'] = to_mail
+            s.sendmail(email_id, to_mail, msg.as_string())
     s.quit()
+
+
+def extract_grades(assignment_no,assignment_name):
+    sheet = "assignment"+str(assignment_no)
+    try:
+        df = pd.read_excel("swe-grades.xlsx", sheet_name = sheet)
+    except:
+        print("failed to access sheet {} of swe-grades.xlsx".format(sheet))
+    if 'total' not in df.columns:
+        print("could not find 'total' column")
+        sys.exit()
+    if 'SIS Login ID' not in df.columns:
+        print("could not find 'SIS Login ID' (canvas login id) column")
+        sys.exit()
+    if 'Student' not in df.columns:
+        print("could not find 'Student' column")
+        sys.exit()
+    if 'ID' not in df.columns:
+        print("could not find 'ID' column")
+        sys.exit()
+    if 'SIS User ID' not in df.columns:
+        print("could not find 'SIS User ID' column")
+        sys.exit()
+    if 'Section' not in df.columns:
+        print("could not find 'Section' column")
+        sys.exit()
+    df.drop(df.columns.difference(['Student','ID','SIS Login ID', 'SIS User ID', 'Section', 'total']), 1, inplace=True)
+    df.rename(columns={'total': assignment_name}, inplace=True)
+    output = "assignment"+str(assignment_no)+".csv"
+    df.to_csv(output, index=False)
 
 
 parser = argparse.ArgumentParser("swe-assignment")
 parser.add_argument("--add", action = "store_true", help="add name of new assignment with: --assignment_no and --assignment_name")
 parser.add_argument("--download_repos", action = "store_true", help="give assignment_no with: --for_assignment and location of ssh file with --path_to_ssh")
 parser.add_argument("--email_comments", action = "store_true", help="send comments through email provide email-id with --email_id")
+parser.add_argument("--extract_grades", action = "store_true", help="get grades in xlsx to upload with --for_assignment and --assignment_name (should be same as in canvas)")
 parser.add_argument("--assignment_no", help="integer")
 parser.add_argument("--assignment_name", help="string: complete name as displayed in title of github classroom assignment")
 parser.add_argument("--destination_direc", help="string: full path of folder where repos need to be downloaded (default: repos will be downloaded to current directory)")
@@ -165,3 +194,16 @@ if args.email_comments:
         print("for_assignment should can not be none")
         sys.exit()
     email_comments(args.email_id,args.for_assignment)
+if args.extract_grades:
+    try:
+        int(args.for_assignment)
+    except:
+        print("for_assignment should be integer")
+        sys.exit()
+    if args.for_assignment is None:
+        print("for_assignment should can not be none")
+        sys.exit()
+    if type(args.assignment_name) is not str or args.assignment_name is None:
+        print("assignment_name should be non-none string")
+        sys.exit()
+    extract_grades(args.for_assignment,args.assignment_name)
