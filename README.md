@@ -1,3 +1,4 @@
+<pre>
 The script was written for python 2.7
 
 *install pip: sudo apt install python-pip\
@@ -49,3 +50,4 @@ Extract grades:\
 	- download swe-grades.xlsx from the drive\
 	- supply: --for_assignment (the assignment number) and --assignment_name (name of assignment in canvas)\
 	- import the formed xlsx into canvas\
+</pre>
