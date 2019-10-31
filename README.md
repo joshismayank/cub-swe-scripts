@@ -6,8 +6,8 @@ The script was written for python 2.7
 *install xlrd: pip install xlrd\
 
 Download assignment:\
-	- this script uses git ssh to download repositories\
-	- to download any assignment, make sure you add the assignment to the script. Please refer to 'Add assignment section'\
+&nbsp- this script uses git ssh to download repositories\
+&nbsp&nbsp- to download any assignment, make sure you add the assignment to the script. Please refer to 'Add assignment section'\
 	- to enable ssh for git, go through the documentation: 'https://help.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh'\
 	- github id's of student: this can be downloaded from github classroom. login to github classroom -> go to desired classroom -> go to settings -> roster management -> download\
 	- command line parameters to be provided:\
