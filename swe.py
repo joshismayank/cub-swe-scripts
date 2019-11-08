@@ -25,15 +25,11 @@ def add_assignment(assignment_no, assignment_name):
     assignments[assignment_no] = assignment_name
 
 
-def download_assignment(assignment_no,filename,path_to_ssh,destination_direc):
+def download_assignment(assignment_no,curr_assign,filename,path_to_ssh,destination_direc):
     """
     downloads repo's of all students for assignement specified by assignment number
     """
-    if assignment_no not in assignments:
-        print("No such assignment exists in 'assignments'. Try adding assignment with --add. Exiting")
-        sys.exit()
     
-    curr_assign = assignments[assignment_no]
     curr_assign = curr_assign.lower()
     git_url_assign = '-'.join(re.findall('\w+',curr_assign))+'-'
     git_url_prefix = 'git@github.com:cu-swe4s-fall-2019/'
@@ -77,7 +73,7 @@ def download_assignment(assignment_no,filename,path_to_ssh,destination_direc):
             print(user)    
 
 
-def email_comments(email_id,assignment_no):
+def email_comments(email_id,assignment_no,assignment_name):
     print "enter password"
     password = getpass.getpass()
     sheet = "assignment"+str(assignment_no)
@@ -141,69 +137,44 @@ def extract_grades(assignment_no,assignment_name):
     df.to_csv(output, index=False)
 
 
-parser = argparse.ArgumentParser("swe-assignment")
-parser.add_argument("--add", action = "store_true", help="add name of new assignment with: --assignment_no and --assignment_name")
-parser.add_argument("--download_repos", action = "store_true", help="give assignment_no with: --for_assignment and location of ssh file with --path_to_ssh")
-parser.add_argument("--email_comments", action = "store_true", help="send comments through email provide email-id with --email_id")
-parser.add_argument("--extract_grades", action = "store_true", help="get grades in xlsx to upload with --for_assignment and --assignment_name (should be same as in canvas)")
-parser.add_argument("--assignment_no", help="integer")
-parser.add_argument("--assignment_name", help="string: complete name as displayed in title of github classroom assignment")
-parser.add_argument("--destination_direc", help="string: full path of folder where repos need to be downloaded (default: repos will be downloaded to current directory)")
-parser.add_argument("--for_assignment", help="integer: to download repos for this assignment_no")
-parser.add_argument("--path_to_ssh", help="string: your ssh file which has been registered with github for ssh conections")
-parser.add_argument("--github_roster", help="string: name of csv file containing github id's for which assignment is to be downloaded (with column header as github_username)")
-parser.add_argument("--email_id", help="string: email-id to send comments about assignment")
-args = parser.parse_args()
-if args.add:
-    try:
-        int(args.assignment_no)
-    except:
-        print("assignment_no should be integer")
-        sys.exit()
-    if args.assignment_no is None:
-        print("assignment_no should can not be none")
-        sys.exit()
-    if type(args.assignment_name) is not str or args.assignment_name is None:
-        print("assignment_name should be non-none string")
-        sys.exit()
-    add_assignment(args.assignment_no,args.assignment_name)
-if args.download_repos:
-    try:
-        int(args.for_assignment)
-    except:
-        print("for_assignment should be integer")
-        sys.exit()
-    if args.for_assignment is None:
-        print("for_assignment should can not be none")
-        sys.exit()
-    if type(args.github_roster) is not str or args.github_roster is None:
-        print("using file `classroom_roster.csv` as default for github id's")
-        args.github_roster = "classroom_roster.csv"
-    if type(args.destination_direc) is not str or args.destination_direc is None:
-        print("using current location to download folder")
-        args.destination_direc = "assignment"+args.assignment_no+"/"
-    if type(args.path_to_ssh) is not str or args.path_to_ssh is None:
-        print("could not find path to ssh file")
-        sys.exit()
-    download_assignment(args.for_assignment,args.github_roster,args.path_to_ssh,args.destination_direc)
-if args.email_comments:
-    if type(args.email_id) is not str or args.email_id is None:
-        print("no email-id provided")
-        sys.exit()
-    if args.for_assignment is None:
-        print("for_assignment should can not be none")
-        sys.exit()
-    email_comments(args.email_id,args.for_assignment)
-if args.extract_grades:
-    try:
-        int(args.for_assignment)
-    except:
-        print("for_assignment should be integer")
-        sys.exit()
-    if args.for_assignment is None:
-        print("for_assignment should can not be none")
-        sys.exit()
-    if type(args.assignment_name) is not str or args.assignment_name is None:
-        print("assignment_name should be non-none string")
-        sys.exit()
-    extract_grades(args.for_assignment,args.assignment_name)
+print("What do you want to do:")
+print("1. Download repos")
+print("2. Email comments")
+print("3. Extract grades")
+print("Option (1 or 2 or 3) ?")
+option = raw_input().strip()
+if option == "1":
+    print("assignment no for which repos need to be downloaded:")
+    assignment_no = int(raw_input().strip())
+    print("assignment name for which repos need to be downloaded (name should exactly match the name in github):")
+    assignment_name = raw_input().strip()
+    print("roster containing github ids of student (should be downloaded from github). To use default file 'classroom_roster.csv' press 'd'") 
+    github_roster = raw_input().strip()
+    if github_roster == "d" or github_roster  == "D":
+        github_roster = "classroom_roster.csv"
+    print("location of folder where you want to download the repos. To download at current location press 'd'")
+    destination_direc = raw_input().strip()
+    if destination_direc == "d" or destination_direc == "D":
+        destination_direc = "assignment" + str(assignment_no) + "/"
+    print("path to your ssh file linked with github account")
+    path_to_ssh = raw_input().strip()
+    download_assignment(assignment_no,assignment_name,github_roster,path_to_ssh,destination_direc)
+elif option == "2":
+    print("assignment no for which comments need to be mailed:")
+    assignment_no = int(raw_input().strip())
+    print("comments will be extracted from sheet 'assignment{}' of 'swe-grades.xlsx'".format(assignment_no))
+    print("assignment name for which comments need to be mailed (name should exactly match the name in github):")
+    assignment_name = raw_input().strip()
+    print("your email id")
+    email_id = raw_input().strip()
+    email_comments(email_id,assignment_no,assignment_name)
+elif option == "3":
+    print("in 3")
+    print("assignment no for which grades need to be extracted:")
+    assignment_no = int(raw_input().strip())
+    print("grades will be extracted from sheet 'assignment{}' of 'swe-grades.xlsx'".format(assignment_no))
+    print("assignment name for which grades need to be extracted (name should exactly match the name in canvas):")
+    assignment_name = raw_input().strip()
+    extract_grades(assignment_no,assignment_name)
+else:
+    print("invalid option")
